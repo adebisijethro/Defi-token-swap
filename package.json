@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.16",
+    "@vercel/speed-insights": "^1.2.2",
     "blockfrost-js": "^7.1.1",
     "lucid-cardano": "^0.10.20",
     "lucide-react": "^0.522.0",
