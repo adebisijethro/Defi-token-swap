@@ -1,28 +1,42 @@
-# DeFi Token Swap Widget
+# Cardano Token Swap Widget
 
-A modern, responsive React-based token swap widget designed for DeFi applications. This project demonstrates a clean UI for swapping tokens, integrated with Web3 wallets via RainbowKit and Wagmi.
+A modern, responsive React-based token swap widget designed for the Cardano ecosystem. This project demonstrates a clean UI for swapping ADA and Cardano native tokens (DJED, MIN, AGIX, etc.), with integration support for Cardano wallets and DEX protocols.
 
 > [!NOTE]
-> **Simulation Mode**: The current implementation simulates token price quotes (fixed 1 ETH = 2500 USDC) and does not execute real transactions on the blockchain. It serves as a UI/UX demonstration and frontend template.
+> **Simulation Mode**: The current implementation simulates token price quotes (mock ADA and Cardano native tokens) and does not execute real transactions on any blockchain. It serves as a UI/UX demonstration and frontend template.
 
 ## Features
 
-- **Wallet Connection**: Integrated with [RainbowKit](https://www.rainbowkit.com/) for seamless wallet connection (MetaMask, WalletConnect, etc.).
-- **Token Swap UI**: Intuitive interface for inputting "Pay" and "Receive" amounts.
-- **Real-time Simulation**: specific hooks simulate network calls to fetch token quotes.
+- **Cardano Wallet Integration**: Ready for integration with [Nami](https://namiwallet.io/), [Eternl](https://eternl.io/), [Flint](https://flint.cx/), and other Cardano browser wallets.
+- **ADA & Native Tokens**: Built-in support for swapping ADA with Cardano native tokens (DJED, MIN, AGIX, etc.).
+- **Token Swap UI**: Intuitive interface for inputting "Pay" and "Receive" amounts with real-time quote simulation.
 - **Responsive Design**: Built with Tailwind CSS for a fully responsive experience on desktop and mobile.
-- **Ambient Styling**: Features a sleek dark mode with ambient background effects.
+- **Dark Mode**: Features a sleek dark mode with ambient background effects optimized for DeFi interfaces.
 
 ## Tech Stack
 
 - **Framework**: [React](https://react.dev/) + [Vite](https://vitejs.dev/)
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/)
-- **Web3 Integration**:
-  - [Wagmi](https://wagmi.sh/): React Hooks for Ethereum.
-  - [Viem](https://viem.sh/): TypeScript Interface for Ethereum.
-  - [RainbowKit](https://www.rainbowkit.com/): Wallet connection UI.
+- **Cardano Integration**:
+    - [Lucid](https://dappio.github.io/lucid/): TypeScript library for Cardano wallet interaction and transaction building.
+    - [Blockfrost](https://blockfrost.io/): REST API for Cardano blockchain data and transaction submission.
+    - [Nami](https://namiwallet.io/) / [Eternl](https://eternl.io/) / [Flint](https://flint.cx/): Popular Cardano browser wallets.
+    - [Minswap](https://minswap.org/) / [SundaeSwap](https://sundaeswap.finance/): Cardano DEX protocols for swap quotes and execution.
 - **Icons**: [Lucide React](https://lucide.dev/)
 - **State Management**: React `useState` & `useEffect`.
+
+## Supported Tokens
+
+The widget supports swapping the following Cardano tokens (with mock prices for demo):
+
+| Token  | Name             | Decimals | Mock Price | Network |
+|--------|------------------|----------|------------|---------|
+| ADA    | Cardano          | 6        | $0.35      | Mainnet |
+| DJED   | Djed Stablecoin  | 6        | $1.00      | Mainnet |
+| MIN    | MIN Finance      | 6        | $0.12      | Mainnet |
+| AGIX   | SingularityNET   | 6        | $0.08      | Mainnet |
+
+*Mock prices are used for UI simulation only. Replace with real oracle data (e.g., from CoinGecko or DEX protocols) in production.*
 
 ## Project Structure
 
@@ -32,9 +46,11 @@ src/
 │   └── SwapWidget.tsx    # Main widget component handling UI and swap logic
 ├── hooks/
 │   └── useTokenQuote.ts  # Custom hook for fetching (simulated) token quotes
+├── constants/
+│   └── tokens.ts         # Cardano token definitions with policyId and assetName
 ├── App.tsx               # Main application layout with ambient background
 ├── Providers.tsx         # Web3 and Query providers setup
-└── main.tsx             # Entry point
+└── main.tsx              # Entry point
 ```
 
 ## Getting Started
@@ -44,12 +60,36 @@ src/
     npm install
     ```
 
-2.  **Start Development Server**
+2.  **Configure Environment** (optional)
+    ```bash
+    # For Blockfrost integration, add to .env.local:
+    VITE_BLOCKFROST_API_KEY=your_api_key_here
+    VITE_BLOCKFROST_NETWORK=mainnet  # or preprod/preview
+    ```
+
+3.  **Start Development Server**
     ```bash
     npm run dev
     ```
 
-3.  **Build for Production**
+4.  **Build for Production**
     ```bash
     npm run build
     ```
+
+## Next Steps for Production
+
+To deploy this widget on the Cardano network, you'll need to:
+
+1. **Replace Wallet Provider**: Swap the Ethereum-focused RainbowKit/Wagmi setup with Cardano wallet connectors (Nami/Eternl).
+2. **Integrate Lucid**: Use [Lucid](https://dappio.github.io/lucid/) to build and submit transactions to Cardano.
+3. **Add DEX Integration**: Connect to Cardano DEXes (Minswap, SundaeSwap) for real swap quotes and liquidity.
+4. **Implement Oracle Pricing**: Fetch real token prices from Blockfrost or CoinGecko API.
+5. **Handle UTXOs**: Implement UTXO selection and management for Cardano transactions.
+
+## Resources
+
+- [Cardano Developer Portal](https://developers.cardano.org/)
+- [Lucid Documentation](https://dappio.github.io/lucid/)
+- [Blockfrost API Docs](https://docs.blockfrost.io/)
+- [CIP Standards](https://cips.cardano.org/) - Cardano Improvement Proposals

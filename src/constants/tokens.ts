@@ -4,43 +4,30 @@ export interface Token {
     decimals: number;
     mockUsdPrice: number;
     color: string; // Tailwind class or hex for icon background
+    icon?: string; // URL or path to icon
+    // Cardano-specific optional fields for native assets
+    policyId?: string;
+    assetName?: string; // hex or ascii name for native asset
 }
 
 export const TOKENS: Token[] = [
     {
-        symbol: 'ETH',
-        name: 'Ethereum',
-        decimals: 18,
-        mockUsdPrice: 2500,
-        color: 'bg-blue-500',
-    },
-    {
-        symbol: 'WBTC',
-        name: 'Wrapped Bitcoin',
-        decimals: 8,
-        mockUsdPrice: 45000,
-        color: 'bg-orange-500',
-    },
-    {
-        symbol: 'USDC',
-        name: 'USD Coin',
+        symbol: 'ADA',
+        name: 'Cardano',
         decimals: 6,
-        mockUsdPrice: 1,
-        color: 'bg-blue-400',
+        mockUsdPrice: 0.35,
+        color: 'bg-sky-500',
+        icon: 'https://assets.coingecko.com/coins/images/975/large/cardano.png?1547034860',
     },
     {
         symbol: 'USDT',
         name: 'Tether USD',
         decimals: 6,
         mockUsdPrice: 1,
-        color: 'bg-teal-500',
-    },
-    {
-        symbol: 'DAI',
-        name: 'Dai Stablecoin',
-        decimals: 18,
-        mockUsdPrice: 1,
-        color: 'bg-yellow-500',
+        color: 'bg-emerald-500',
+        icon: 'https://assets.coingecko.com/coins/images/325/large/Tether.png?1598529401',
+        policyId: '00000000000000000000000000000000000000000000000000000000',
+        assetName: '555344', // 'USD' hex
     },
 ];
 

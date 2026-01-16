@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
-import { ArrowDown, ArrowUpDown, Settings } from 'lucide-react';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useAccount } from 'wagmi';
+import { ChevronDown, X } from 'lucide-react';
+import { useCardanoWallet } from '../Providers';
 import { useTokenQuote, TradeType } from '../hooks/useTokenQuote';
 import { TOKENS, Token, getTokenBySymbol } from '../constants/tokens';
 
 export const SwapWidget = () => {
-  const { isConnected } = useAccount();
+  const { wallet, connectWallet, disconnectWallet } = useCardanoWallet();
   const [sellAmount, setSellAmount] = useState('');
-  // Placeholder for now
-  const [sellToken, setSellToken] = useState('ETH');
-  const [buyToken, setBuyToken] = useState('USDC');
+  const [sellToken, setSellToken] = useState('ADA');
+  const [buyToken, setBuyToken] = useState('USDT');
+  const [showWalletMenu, setShowWalletMenu] = useState(false);
+  const [selectingFor, setSelectingFor] = useState<'sell' | 'buy' | null>(null);
 
   const { quoteAmount, loading, error } = useTokenQuote({
     tokenIn: sellToken,
@@ -26,8 +26,6 @@ export const SwapWidget = () => {
     setBuyToken(sellToken);
     setSellAmount(buyAmount);
   };
-
-  const [selectingFor, setSelectingFor] = useState<'sell' | 'buy' | null>(null);
 
   const handleTokenSelect = (token: Token) => {
     if (selectingFor === 'sell') {
@@ -47,230 +45,251 @@ export const SwapWidget = () => {
   const currentSellToken = getTokenBySymbol(sellToken);
   const currentBuyToken = getTokenBySymbol(buyToken);
 
+  // Calculate exchange rate
+  const exchangeRate = currentSellToken && currentBuyToken && parseFloat(sellAmount) > 0
+    ? (currentSellToken.mockUsdPrice / currentBuyToken.mockUsdPrice).toFixed(5)
+    : '0';
+
   return (
-    <div className="w-full max-w-[480px] mx-auto p-4 relative">
-      {/* Widget Container */}
-      <div className="bg-[#131B2E] border border-slate-800 rounded-3xl p-4 shadow-2xl relative overflow-hidden backdrop-blur-xl">
+    <div className="w-full max-w-md mx-auto relative">
+      {/* Main Card */}
+      <div className="bg-white rounded-3xl shadow-2xl p-8 relative">
+        
+        {/* Close Button - positioned absolutely at top */}
+        <button className="absolute -top-6 right-6 w-12 h-12 bg-gray-900 text-white rounded-full flex items-center justify-center hover:bg-gray-800 transition-colors shadow-lg">
+          <X size={24} />
+        </button>
 
         {/* Header */}
-        <div className="flex items-center justify-between mb-4 px-2">
-          <h2 className="text-white text-lg font-semibold">Swap</h2>
-          <button className="text-slate-400 hover:text-white transition-colors p-2 rounded-full hover:bg-white/5">
-            <Settings size={20} />
+        <div className="flex items-center justify-between mb-8 mt-4">
+          <h2 className="text-2xl font-bold text-gray-900">Pay & Receive</h2>
+          <button className="px-4 py-2 bg-white border border-gray-300 rounded-full text-gray-700 font-medium flex items-center gap-2 hover:bg-gray-50 transition-colors">
+            Crypto
+            <ChevronDown size={18} />
           </button>
         </div>
 
-        {/* Inputs Container */}
-        <div className="space-y-1">
-
-          {/* Pay Input */}
-          <div className="bg-[#0F172A] rounded-2xl p-4 hover:border-slate-700 border border-transparent transition-all">
-            <div className="flex justify-between mb-2">
-              <span className="text-slate-400 text-sm font-medium">Pay</span>
-              <span className="text-slate-400 text-sm">Balance: 0.00</span>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <input
-                type="text"
-                value={sellAmount}
-                onChange={(e) => setSellAmount(e.target.value)}
-                placeholder="0"
-                className="bg-transparent text-3xl text-white outline-none w-full font-medium placeholder-slate-600"
-              />
-              <button
-                onClick={() => setSelectingFor('sell')}
-                className="flex items-center gap-2 bg-[#1E293B] hover:bg-[#334155] text-white px-3 py-1.5 rounded-full font-semibold transition-all shrink-0"
-              >
-                <span className={`w-6 h-6 rounded-full ${currentSellToken?.color}`}></span>
-                {sellToken}
-                <ArrowDown size={16} className="text-slate-400" />
-              </button>
-            </div>
-            <div className="flex justify-between mt-2 h-4">
-              <span className="text-slate-500 text-xs">$0.00</span>
-            </div>
+        {/* Pay Section */}
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-3">
+            <label className="text-gray-500 font-medium text-sm">You'll pay</label>
+            <span className="text-gray-500 text-sm">Balance: 0.00</span>
           </div>
-
-          {/* Swap Indicator */}
-          <div className="relative h-2 z-10">
-            <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#131B2E] p-1.5 rounded-xl border-4 border-[#131B2E]">
-              <div
-                className="bg-[#1E293B] p-2 rounded-lg hover:bg-[#334155] cursor-pointer transition-colors border border-slate-800"
-                onClick={switchTokens}
-              >
-                <ArrowUpDown size={16} className="text-blue-400" />
+          
+          <div className="bg-gray-100 rounded-2xl p-5">
+            <div className="flex gap-3 items-start">
+              <div className="flex-1 pt-1">
+                <input
+                  type="text"
+                  value={sellAmount}
+                  onChange={(e) => setSellAmount(e.target.value)}
+                  placeholder="0"
+                  className="w-full text-5xl font-bold text-gray-400 bg-transparent outline-none placeholder-gray-400"
+                />
+              </div>
+              
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => setSelectingFor('sell')}
+                  className="flex items-center gap-2 px-4 py-2 bg-white rounded-full hover:bg-gray-50 transition-colors border border-gray-200 whitespace-nowrap"
+                >
+                  {currentSellToken?.icon ? (
+                    <img src={currentSellToken.icon} alt={sellToken} className="w-6 h-6 rounded-full" />
+                  ) : (
+                    <span className={`w-6 h-6 rounded-full ${currentSellToken?.color}`}></span>
+                  )}
+                  <span className="font-semibold text-gray-900">{sellToken}</span>
+                  <ChevronDown size={16} className="text-gray-600" />
+                </button>
+                <button className="text-gray-600 text-xs font-medium px-3 py-1 hover:text-gray-900">
+                  MAX
+                </button>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Receive Input */}
-          <div className="bg-[#0F172A] rounded-2xl p-4 hover:border-slate-700 border border-transparent transition-all">
-            <div className="flex justify-between mb-2">
-              <span className="text-slate-400 text-sm font-medium">Receive</span>
-              <span className="text-slate-400 text-sm">Balance: 0.00</span>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <input
-                type="text"
-                value={buyAmount}
-                readOnly
-                placeholder="0"
-                className="bg-transparent text-3xl text-white outline-none w-full font-medium placeholder-slate-600"
-              />
+        {/* Swap Button */}
+        <div className="flex justify-center mb-6">
+          <button
+            onClick={switchTokens}
+            className="p-3 bg-white border-4 border-gray-200 rounded-full hover:border-gray-300 transition-all text-gray-900 hover:bg-gray-50"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <polyline points="19 12 12 19 5 12"></polyline>
+            </svg>
+          </button>
+        </div>
+
+        {/* Receive Section */}
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-3">
+            <label className="text-gray-500 font-medium text-sm">You'll receive</label>
+            <span className="text-gray-500 text-sm">Balance: 0.00</span>
+          </div>
+          
+          <div className="bg-gray-100 rounded-2xl p-5">
+            <div className="flex gap-3 items-start">
+              <div className="flex-1 pt-1">
+                <input
+                  type="text"
+                  value={buyAmount}
+                  readOnly
+                  placeholder="0"
+                  className="w-full text-5xl font-bold text-blue-500 bg-transparent outline-none placeholder-gray-400"
+                />
+              </div>
+              
               <button
                 onClick={() => setSelectingFor('buy')}
-                className="flex items-center gap-2 bg-[#1E293B] hover:bg-[#334155] text-white px-3 py-1.5 rounded-full font-semibold transition-all shrink-0"
+                className="flex items-center gap-2 px-4 py-2 bg-white rounded-full hover:bg-gray-50 transition-colors border border-gray-200 whitespace-nowrap"
               >
-                <span className={`w-6 h-6 rounded-full ${currentBuyToken?.color}`}></span>
-                {buyToken}
-                <ArrowDown size={16} className="text-slate-400" />
+                {currentBuyToken?.icon ? (
+                  <img src={currentBuyToken.icon} alt={buyToken} className="w-6 h-6 rounded-full" />
+                ) : (
+                  <span className={`w-6 h-6 rounded-full ${currentBuyToken?.color}`}></span>
+                )}
+                <span className="font-semibold text-gray-900">{buyToken}</span>
+                <ChevronDown size={16} className="text-gray-600" />
               </button>
-            </div>
-            <div className="flex justify-between mt-2 h-4">
-              <span className="text-slate-500 text-xs text-right w-full">
-                {loading ? 'Fetching best price...' : error ? <span className="text-red-400">Error fetching price</span> : ''}
-              </span>
             </div>
           </div>
         </div>
 
-        {/* Action Button */}
-        <div className="mt-4">
-          {!isConnected ? (
-            <ConnectButton.Custom>
-              {({
-                account,
-                chain,
-                openAccountModal,
-                openChainModal,
-                openConnectModal,
-                authenticationStatus,
-                mounted,
-              }) => {
-                const ready = mounted && authenticationStatus !== 'loading';
-                const connected =
-                  ready &&
-                  account &&
-                  chain &&
-                  (!authenticationStatus ||
-                    authenticationStatus === 'authenticated');
-
-                return (
-                  <div
-                    {...(!ready && {
-                      'aria-hidden': true,
-                      'style': {
-                        opacity: 0,
-                        pointerEvents: 'none',
-                        userSelect: 'none',
-                      },
-                    })}
-                  >
-                    {(() => {
-                      if (!connected) {
-                        return (
-                          <button onClick={openConnectModal} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-2xl transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)]">
-                            Connect Wallet
-                          </button>
-                        );
-                      }
-                      if (chain.unsupported) {
-                        return (
-                          <button onClick={openChainModal} className="w-full bg-red-500 text-white font-bold py-4 rounded-2xl">
-                            Wrong network
-                          </button>
-                        );
-                      }
-                      return (
-                        <div style={{ display: 'flex', gap: 12 }}>
-                          <button
-                            onClick={openChainModal}
-                            style={{ display: 'flex', alignItems: 'center' }}
-                            type="button"
-                            className="w-full bg-[#1E293B] text-white font-bold py-4 rounded-2xl"
-                          >
-                            {chain.hasIcon && (
-                              <div
-                                style={{
-                                  background: chain.iconBackground,
-                                  width: 12,
-                                  height: 12,
-                                  borderRadius: 999,
-                                  overflow: 'hidden',
-                                  marginRight: 4,
-                                }}
-                              >
-                                {chain.iconUrl && (
-                                  <img
-                                    alt={chain.name ?? 'Chain icon'}
-                                    src={chain.iconUrl}
-                                    style={{ width: 12, height: 12 }}
-                                  />
-                                )}
-                              </div>
-                            )}
-                            {chain.name}
-                          </button>
-                          <button onClick={openAccountModal} type="button" className="w-full bg-[#1E293B] text-white font-bold py-4 rounded-2xl">
-                            {account.displayName}
-                            {account.displayBalance
-                              ? ` (${account.displayBalance})`
-                              : ''}
-                          </button>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                );
-              }}
-            </ConnectButton.Custom>
-          ) : (
-            <button className="w-full bg-[#1E293B] text-slate-500 font-bold py-4 rounded-2xl cursor-not-allowed">
-              {loading ? 'Calculated...' : 'Swap'}
+        {/* Exchange Rate */}
+        {sellAmount && !loading && !error && (
+          <div className="mb-8 p-4 bg-gray-50 rounded-xl flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-5 h-5 rounded-full bg-gray-400 flex items-center justify-center text-white text-xs font-bold">
+                i
+              </div>
+              <span className="text-gray-700 text-sm">
+                1 {sellToken} = {exchangeRate} {buyToken}
+              </span>
+            </div>
+            <button className="text-gray-600 hover:text-gray-900 flex items-center gap-1">
+              <span className="text-sm font-medium">Show details</span>
+              <ChevronDown size={16} />
             </button>
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* Status Messages */}
+        {loading && (
+          <div className="mb-8 p-4 bg-blue-50 rounded-xl">
+            <span className="text-blue-700 text-sm font-medium">Fetching best price...</span>
+          </div>
+        )}
+        
+        {error && (
+          <div className="mb-8 p-4 bg-red-50 rounded-xl">
+            <span className="text-red-700 text-sm font-medium">{error}</span>
+          </div>
+        )}
+
+        {/* Swap Now Button */}
+        <button className="w-full bg-gradient-to-r from-cyan-400 to-blue-400 text-gray-900 font-bold py-4 rounded-full hover:shadow-lg transition-all text-lg mb-4">
+          Swap Now
+        </button>
+
+        {/* Wallet Connection Section */}
+        {!wallet.connected ? (
+          <button
+            onClick={() => setShowWalletMenu(true)}
+            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold py-3 rounded-full transition-colors"
+          >
+            Connect Cardano Wallet
+          </button>
+        ) : (
+          <div className="p-3 bg-green-50 rounded-full border border-green-200 flex items-center justify-between">
+            <span className="text-green-700 text-sm font-medium">
+              📍 {wallet.address?.slice(0, 10)}...{wallet.address?.slice(-8)}
+            </span>
+            <button
+              onClick={disconnectWallet}
+              className="text-red-500 hover:text-red-600 text-sm font-medium"
+            >
+              ✕
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Token Select Modal */}
+      {/* Token Selection Modal */}
       {selectingFor && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-3xl"
-            onClick={() => setSelectingFor(null)}
-          />
-
-          {/* Modal Content */}
-          <div className="bg-[#1E293B] w-full max-w-sm rounded-2xl border border-slate-700 shadow-2xl relative z-10 overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="p-4 border-b border-slate-700 flex justify-between items-center">
-              <h3 className="text-white font-semibold">Select Token</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30">
+          <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl relative z-10 overflow-hidden">
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+              <h3 className="text-lg font-bold text-gray-900">Select Token</h3>
               <button
                 onClick={() => setSelectingFor(null)}
-                className="text-slate-400 hover:text-white"
+                className="text-gray-400 hover:text-gray-600"
               >
-                ✕
+                <X size={24} />
               </button>
             </div>
 
-            <div className="max-h-[300px] overflow-y-auto p-2">
+            <div className="max-h-[400px] overflow-y-auto p-4">
               {TOKENS.map((token) => (
                 <button
                   key={token.symbol}
                   onClick={() => handleTokenSelect(token)}
-                  className="w-full flex items-center gap-3 p-3 hover:bg-slate-700/50 rounded-xl transition-colors text-left group"
+                  className="w-full flex items-center gap-3 p-3 hover:bg-gray-100 rounded-2xl transition-colors text-left group mb-2"
                 >
-                  <span className={`w-8 h-8 rounded-full flex items-center justify-center ${token.color} text-white font-bold text-xs`}>
-                    {token.symbol[0]}
-                  </span>
-                  <div>
-                    <div className="text-white font-medium">{token.name}</div>
-                    <div className="text-slate-400 text-xs">{token.symbol}</div>
+                  {token.icon ? (
+                    <img src={token.icon} alt={token.symbol} className="w-10 h-10 rounded-full" />
+                  ) : (
+                    <span className={`w-10 h-10 rounded-full flex items-center justify-center ${token.color} text-white font-bold text-sm`}>
+                      {token.symbol[0]}
+                    </span>
+                  )}
+                  <div className="flex-1">
+                    <div className="text-gray-900 font-semibold">{token.name}</div>
+                    <div className="text-gray-500 text-sm">{token.symbol}</div>
                   </div>
                   {((selectingFor === 'sell' && sellToken === token.symbol) ||
                     (selectingFor === 'buy' && buyToken === token.symbol)) && (
-                      <div className="ml-auto text-blue-400 text-sm">Selected</div>
+                      <div className="text-blue-500 font-semibold">✓</div>
                     )}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Wallet Selection Modal */}
+      {showWalletMenu && !wallet.connected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30">
+          <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl relative z-10 overflow-hidden">
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+              <h3 className="text-lg font-bold text-gray-900">Connect Wallet</h3>
+              <button
+                onClick={() => setShowWalletMenu(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="max-h-[400px] overflow-y-auto p-4">
+              {['Nami', 'Eternl', 'Flint'].map((walletName) => (
+                <button
+                  key={walletName}
+                  onClick={async () => {
+                    await connectWallet(walletName);
+                    setShowWalletMenu(false);
+                  }}
+                  className="w-full flex items-center gap-3 p-3 hover:bg-gray-100 rounded-2xl transition-colors text-left mb-2"
+                >
+                  <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-sm">
+                    {walletName[0]}
+                  </div>
+                  <div>
+                    <div className="text-gray-900 font-semibold">{walletName}</div>
+                    <div className="text-gray-500 text-sm">Cardano Wallet</div>
+                  </div>
                 </button>
               ))}
             </div>
